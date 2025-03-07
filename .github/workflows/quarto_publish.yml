@@ -3,7 +3,7 @@ name: Publish Quarto Website
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "ulhpc-aws-2023" ]
 
 permissions:
   id-token: write
