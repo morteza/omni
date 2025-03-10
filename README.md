@@ -1,4 +1,4 @@
-# Omni-Modal brain datasets
+# Omni-Modal Brain Datasets
 
 *OmniModalBrain* is an ongoing effort to collect and format multi-modal brain data, including rs-EEG, rs-MEG, rs-fMRI, eye tracking, and behavioral. The data is collected from multiple sources and is available in identical formats to facilitate multi-modal analysis.
 
