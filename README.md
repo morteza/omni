@@ -1,6 +1,6 @@
-# Multi-Modal Resting-State Dataset
+# Omni-Modal brain datasets
 
-*MultiModalRest* is an ongoing effort to collect and format multi-modal resting-state brain data, including EEG, MEG, fMRI, eye tracking, and behavioral. The data is collected from multiple sources and is available in identical formats to facilitate multi-modal analysis.
+*OmniModalBrain* is an ongoing effort to collect and format multi-modal brain data, including rs-EEG, rs-MEG, rs-fMRI, eye tracking, and behavioral. The data is collected from multiple sources and is available in identical formats to facilitate multi-modal analysis.
 
 > [!IMPORTANT]  
 > Please refer to the [ulhpc-aws-2023 branch](https://github.com/morteza/omni/tree/ulhpc-aws-2023) or [old documentations website](https://morteza.github.io/omni/) for the initial proposal of the project that was submitted to the ULHPC Amazon AWS 2023 joint call.
