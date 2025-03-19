@@ -2,6 +2,13 @@
 title: "MutliModalRest"
 ---
 
+:::{.callout-warning appearance="default"}
+
+This website and corresponding codes are outdated. Please refer to the new project ([github.com/morteza/omni](https://github.com/morteza/omni)) for the latest updates. Also see [https://github.com/morteza/ACNets/tree/multimodal/](https://github.com/morteza/ACNets/tree/multimodal/) for an updated version of the codes.
+
+:::
+
+
 This is the documentation for the `MultiModalRest` project. The main goal of this website is to document steps needed to run a large-scale neuroimaging study on a HPC cluster. The project is divided into several sections:
 
 - [Technical documents](technical/)
