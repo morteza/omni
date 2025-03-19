@@ -6,3 +6,5 @@ __pycache__/
 tmp/
 .venv/
 
+docs/_site/
+docs/.quarto/
