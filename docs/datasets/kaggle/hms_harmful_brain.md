@@ -3,7 +3,7 @@ id: kaggle/hms_harmful_brain
 title: HMS - Harmful Brain Activity Classification
 url: https://www.kaggle.com/competitions/hms-harmful-brain-activity-classification/data
 origin: Kaggle
-eeg: false
+eeg/meg: false
 func: false
 anat: false
 bids: false
