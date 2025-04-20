@@ -1,6 +1,6 @@
 # TODO: OmniData Specification (Draft)
 
-Human data comes in many modalities and flavours. Here, I will try to define a common dataset format that can be used to store and retrieve cognitive data, mainly addressing the needs on the OmniBrain project. 
+Human data comes in many modalities and flavours. Here, I will try to define a common dataset format that can be used to store and retrieve cognitive data, mainly addressing the needs on the Omni-Brain project. 
 
 ## Minimal formats
 

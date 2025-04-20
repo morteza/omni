@@ -1,0 +1,73 @@
+id: https://w3id.org/omni-rest/data/
+name: omni-rest-data
+description: |
+  This schema describes the data used in the Omni-Rest project, including the modalities, format, metadata, and shapes.
+prefixes:
+  linkml: https://w3id.org/linkml/
+  omni: https://w3id.org/omni-rest/
+  # TODO: add schema.org prefix
+imports:
+  - linkml:types
+default_range: string
+default_prefix: omni
+
+enums:
+  DataModalityEnum:
+    enum_uri: omni:DataModalityEnum
+    permissible_values:
+      - fmri:
+          description: Functional MRI data
+      - eeg:
+          description: Electroencephalography data
+      - meg:
+          description: Magnetoencephalography data
+      - eye:
+          description: Eye tracking data
+      - beh:
+          description: Behavioral data (RL-like formats)
+      - statistics:
+          description: Statistics data (scores, etc.)
+
+types:
+  # Modality:
+  #   uri: linkml:string
+  #   base: str
+  #   description: | 
+  #     The modality of the data.
+
+classes:
+  ComputerAgent:
+  HumanSubject:
+    exact_mappings:
+      - schema:Person
+  Dataset:
+  DataPartition:
+  DataArray:
+    slots:
+      - name
+      - modality
+      - format
+      - metadata
+      - shape
+
+slots:
+  name:
+    description: The name of the element.
+    range: string
+    required: true
+  modality:
+    description: The modality of the data.
+    range: DataModalityEnum
+    required: true
+  format:
+    description: The format of the data.
+    range: string
+    required: true
+  metadata:
+    description: The metadata of the data.
+    range: string
+    required: false
+  shape:
+    description: The shape of the data.
+    range: string
+    required: false
