@@ -20,11 +20,11 @@ Human data comes in many modalities and flavours. Here, I will try to define a c
     - Dynamic: subject region region time
     - Dynamic: subject channel channel time
 
-- Behavioral datasets are in tabular format and reflect either RL-like interactions (<s,a,r> from the agents point of view), events (form the system point of view), or summary statistics (scores, etc). Shapes
+- Behavioral datasets are in tabular format and reflect either RL-like interactions (<s,a,r>-like from the agents point of view), events (form the system point of view), or summary statistics (scores, etc). Shapes:
     - agents: subject episode [step] s a r
     - events (in env): subject time event
     - statistics (e.g., trial-by-trial): subject episode stat
-    - statistics (e.g., personality scores): subject stat
+    - statistics (e.g., personality scores, demographics): subject stat
 
 
 - Eye tracking datasets are in tabular format and represents the position of the eye in 3D space (x,y,z) and the time of the sample. The data is usually sampled at specific sampling rate. The data can be used to compute fixations, saccades, etc. Shapes:
@@ -33,3 +33,24 @@ Human data comes in many modalities and flavours. Here, I will try to define a c
     - subject time [x y z] [saccade]
     - statistics
 
+
+
+## Note on agent identifiers
+
+- subject/agent identifiers represent individual differences in human data or robots.
+- it may be used to connect specific data to specific individuals, so better to discard/change it.
+- it's another feature for individual observation, but perhaps not a feature of the dataset itself.
+- there is no need to partition data by subject_id as long as there that other more performant partitioning strategies are used. Just keep it as a feature of data points.
+- learned embeddings may also capture individual differences in the environments, scanners, machines, subjects, etc.
+- some downstream tasks may predict features of the subject_id, e.g., demographics, personality, etc. For these tasks, the subject_id/embedding may not be used as a direct feature.
+- we need a more generic method to identify agents/subjects/robots/scanner/machines.
+- for evaluation for specific downstream tasks, we may need to group-split data by these ids.
+- Example scenario:
+    - input: a_id, patch, time
+    - output: label
+    - here we group-split patches by a_id, and take the accuracy per patch OR average accuracy over patches of the same groups (i.e., a_ids).
+- Embedding strategies:
+    - categorical dictionary embedding for a_id
+    - learned embedding from all the features
+    - categorical dictionary embedding for a_id + env_id + task_id
+    - TODO: more specific arch
