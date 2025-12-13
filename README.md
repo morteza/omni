@@ -1,6 +1,6 @@
 # OmniRest
 
-*OmniRest* is an ongoing effort to collect and model multi-modal resting-state brain data, including rs-EEG, rs-MEG, rs-fMRI, eye tracking, and behavioral data. The data is collected from multiple sources and will be made available in a format that facilitates multi-modal modeling of the human brain.
+*OmniRest* is an ongoing effort to build a very large multi-modal resting-state brain dataset, including rs-EEG, rs-MEG, rs-fMRI, eye tracking, corresponding task scans, and behavioral data. The data is collected from multiple sources and will be made available in a format that facilitates multi-modal modeling of the human brain.
 
 
 ## Contributions
