@@ -1,10 +1,13 @@
+from bz2 import compress
 from dataclasses import dataclass
+from operator import is_
 from pathlib import Path
-from typing import IO
+from typing import IO, Optional
 import struct
 import numpy as np
 import gzip
 import os
+import pyarrow as pa
 
 DEBUG = False
 
@@ -225,8 +228,11 @@ class NIfTI2:
         self.unused_str = b''
 
         # Apply default scaling if not set
-        if self.scl_slope == 0:
+        # Apply default scaling if not set
+        if self.scl_slope == 0 or np.isnan(self.scl_slope):
             self.scl_slope = 1.0
+        if self.scl_inter is None or np.isnan(self.scl_inter):
+            self.scl_inter = 0.0
 
     def _read_nifti2_header(self, header_bytes):
         """Parse NIfTI-2 header (540 bytes)."""
@@ -260,8 +266,8 @@ class NIfTI2:
         self.pixdim = np.array(struct.unpack('<8d', header_bytes[offset:offset+64]))
         offset += 64
 
-        # int64 vox_offset
-        self.vox_offset = struct.unpack('<q', header_bytes[offset:offset+8])[0]
+        # double vox_offset (stored as float64 in NIfTI-2)
+        self.vox_offset = struct.unpack('<d', header_bytes[offset:offset+8])[0]
         offset += 8
 
         # double scl_slope, scl_inter
@@ -337,8 +343,10 @@ class NIfTI2:
         offset += 15
 
         # Apply default scaling if not set
-        if self.scl_slope == 0:
+        if self.scl_slope == 0 or np.isnan(self.scl_slope):
             self.scl_slope = 1.0
+        if self.scl_inter is None or np.isnan(self.scl_inter):
+            self.scl_inter = 0.0
 
     def _get_dtype(self):
         """Get numpy dtype from NIfTI datatype code."""
@@ -395,57 +403,35 @@ class NIfTI2:
             affine[2, 2] = self.pixdim[3]
             return affine
 
-    def read_data(self):
-        """Read the entire data array."""
-        self.f.seek(int(self.vox_offset))
-
-        dtype = self._get_dtype()
-        shape = self.get_shape()
-        n_voxels = np.prod(shape)
-
-        # Read raw data
-        data = np.frombuffer(self.f.read(int(n_voxels * dtype().itemsize)), dtype=dtype)
-
-        # Reshape to image dimensions
-        data = data.reshape(shape)
-
-        # Apply scaling
-        if self.scl_slope != 0:
-            data = data.astype(np.float32) * self.scl_slope + self.scl_inter
-
-        return data
-
-    def read_volume(self, volume_idx=0):
+    def read_data(self, volume_idx=None):
         """
         Read a single volume from a 4D dataset.
         For 3D data, volume_idx is ignored.
         """
+        dtype = self._get_dtype()
         shape = self.get_shape()
 
-        if len(shape) == 3:
+        if volume_idx is None or len(shape) == 3:
             # 3D data, just read the whole thing
-            return self.read_data()
+            n_voxels = np.prod(shape)
+            offset = int(self.vox_offset)
         elif len(shape) == 4:
-            # 4D data, read specific volume
-            dtype = self._get_dtype()
-            volume_shape = shape[:3]
-            n_voxels_per_volume = np.prod(volume_shape)
-
-            # Seek to the start of the desired volume
-            offset = int(self.vox_offset + volume_idx * n_voxels_per_volume * dtype().itemsize)
-            self.f.seek(offset)
-
-            # Read one volume
-            data = np.frombuffer(self.f.read(int(n_voxels_per_volume * dtype().itemsize)), dtype=dtype)
-            data = data.reshape(volume_shape)
-
-            # Apply scaling
-            if self.scl_slope != 0:
-                data = data.astype(np.float32) * self.scl_slope + self.scl_inter
-
-            return data
+            # 4D data, read one specific volume
+            n_voxels = np.prod(shape[:3])
+            offset = int(self.vox_offset + volume_idx * n_voxels * dtype().itemsize)
         else:
             raise ValueError(f"Unsupported dimensionality: {len(shape)}D")
+
+        self.f.seek(offset)
+        data = np.frombuffer(self.f.read(int(n_voxels * dtype().itemsize)), dtype=dtype)
+        data = data.reshape(shape, order='F')
+
+        # Apply scaling
+        if self.scl_slope != 1.0 or self.scl_inter != 0.0:
+            data = data.astype(np.float32)
+            data = data * self.scl_slope + self.scl_inter
+
+        return data
 
     def n_volumes(self):
         """Return the number of volumes (for 4D data) or 1 (for 3D data)."""
@@ -454,11 +440,73 @@ class NIfTI2:
             return shape[3]
         return 1
 
-    def get_zooms(self):
-        """Get the voxel sizes (zooms) in mm."""
+    def get_voxel_size(self):
+        """Get the voxel sizes in mm."""
         ndim = self.dim[0]
         return tuple(self.pixdim[1:ndim+1])
 
+
+    def to_arrow_tensor(self, volume_idx: Optional[int] = None) -> pa.Tensor:
+        """Convert the loaded NIfTI data (or a specific volume) to an Apache Arrow DenseTensor."""
+        data = self.read_data(volume_idx)
+
+        if not data.flags['C_CONTIGUOUS']:
+            data = np.ascontiguousarray(data)
+
+        return pa.Tensor.from_numpy(data)
+
+
+def profile_custom_nifti2():
+    
+    import time
+    import tracemalloc
+
+    tracemalloc.start()
+    t0 = time.perf_counter()
+
+    with NIfTI2.open(test_file) as custom:
+        data = custom.read_data()
+
+    elapsed = time.perf_counter() - t0
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    print("[PROFILE] CUSTOM")
+    print(data.shape, data.dtype)
+    print(f"Time: {elapsed:.2f}s")
+    print(f"Curr mem: {current / 1e6:.1f} MB")
+    print(f"Peak mem: {peak / 1e6:.1f} MB")
+    print(f"Diff mem: {(peak - current) / 1e6:.1f} MB")
+
+    return data
+
+def profile_nibabel():
+    import nibabel as nib  # type: ignore
+
+    import time
+    import tracemalloc
+
+    tracemalloc.start()
+    t0 = time.perf_counter()
+
+    data = nib.load("~/workspace/omni/tmp/rest-7T.nii.gz").get_fdata(dtype=np.float32)  # type: ignore[attr-defined]
+
+    elapsed = time.perf_counter() - t0
+    current, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+
+    print("[PROFILE] NIBABEL")
+    print(data.shape, data.dtype)
+    print(f"Time: {elapsed:.2f}s")
+    print(f"Curr mem: {current / 1e6:.1f} MB")
+    print(f"Peak mem: {peak / 1e6:.1f} MB")
+    print(f"Diff mem: {(peak - current) / 1e6:.1f} MB")
+
+    # print(f"nibabel shape: {nib_data.shape}, dtype: {nib_data.dtype}")
+    # print(f"nibabel range: [{nib_data.min():.2f}, {nib_data.max():.2f}]")
+    # print(f"nibabel mean: {nib_data.mean():.2f}")
+
+    return data
 
 if __name__ == '__main__':
     import sys
@@ -474,14 +522,13 @@ if __name__ == '__main__':
         sys.exit(1)
 
     print(f"Reading NIfTI file: {test_file}")
-    print()
 
     with NIfTI2.open(test_file) as nii:
         print(f"NIfTI version: NIfTI-{1 if nii.sizeof_hdr == 348 else 2}")
         print(f"Magic: {nii.magic}")
         print(f"Data type: {nii.datatype} (bitpix: {nii.bitpix})")
         print(f"Dimensions: {nii.get_shape()}")
-        print(f"Voxel sizes: {nii.get_zooms()} mm")
+        print(f"Voxel sizes: {nii.get_voxel_size()} mm")
         print(f"Description: {nii.descrip}")
         print(f"Aux file: {nii.aux_file}")
         print(f"Data offset: {nii.vox_offset}")
@@ -505,12 +552,47 @@ if __name__ == '__main__':
         print("Srow_x:", nii.srow_x)
         print("Srow_y:", nii.srow_y)
         print("Srow_z:", nii.srow_z)
-        print()
 
         # Read data
-        print("Reading data...")
         data = nii.read_data()
+
         print(f"Data shape: {data.shape}")
         print(f"Data dtype: {data.dtype}")
         print(f"Data range: [{data.min():.2f}, {data.max():.2f}]")
+
         print(f"Data mean: {data.mean():.2f}")
+
+
+        # print(f"Writing DenseTensor to {out_path} with {compression.upper()} compression...")
+        # compression = "zstd"
+        # compression_level = 9  # higher = better ratio, slower
+        # out_path = Path(f"nifti_tensor.arrow.{compression}").resolve()
+        # # Write tensor with compression
+        # with pa.CompressedOutputStream(out_path, compression, compression_level=compression_level) as sink:
+        #     pa.ipc.write_tensor(tensor, sink)
+
+        data_tensor = nii.to_arrow_tensor()
+        print(f"Converted to Apache Arrow DenseTensor with shape {data_tensor.shape} and dtype {data_tensor.type}")
+
+        import zarr
+        z = zarr.create_array(
+            Path("tmp/tensor6.zarr"),
+            shape=data.shape,
+            chunks=(32, 32, 32, data.shape[-1]),
+            # dtype=data_tensor.type.to_pandas_dtype(),
+            dtype=data.dtype,
+            compressors=[zarr.codecs.ZstdCodec(level=9)],
+            overwrite=True,
+        )
+        z[:] = data # data_tensor.to_numpy()  # streams chunk-by-chunk    
+        print("Converted to zarr.")
+        print(f"Data mean from zarr: {np.array(z).mean():.2f}")
+
+        print()
+        data_nib = profile_nibabel()
+        print()
+        data_cus = profile_custom_nifti2()
+
+        print()
+        print("avg diff values:", np.abs(data_nib - data_cus).mean())
+        print("max diff values:", np.abs(data_nib - data_cus).max())
