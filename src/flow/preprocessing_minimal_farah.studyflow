@@ -34,7 +34,7 @@
       <bpmn2:outgoing>Flow_0whq2x0</bpmn2:outgoing>
     </bpmn2:task>
     <bpmn2:sequenceFlow id="Flow_06whdh6" sourceRef="Activity_1b7zcl9" targetRef="Activity_1v1r114" />
-    <bpmn2:task id="Activity_1vmth6x" name="Notch">
+    <bpmn2:task id="Activity_1vmth6x" name="Line noise removal">
       <bpmn2:incoming>Flow_1wzmh95</bpmn2:incoming>
       <bpmn2:outgoing>Flow_1khl6kt</bpmn2:outgoing>
     </bpmn2:task>
@@ -53,6 +53,10 @@
       <bpmn2:incoming>Flow_1ycnswl</bpmn2:incoming>
     </bpmn2:endEvent>
     <bpmn2:sequenceFlow id="Flow_1ycnswl" sourceRef="Activity_1o868wa" targetRef="Event_001cil2" />
+    <bpmn2:textAnnotation id="TextAnnotation_1wwmllk">
+      <bpmn2:text>Optional</bpmn2:text>
+    </bpmn2:textAnnotation>
+    <bpmn2:association id="Association_0bzk73c" associationDirection="None" sourceRef="Activity_1vmth6x" targetRef="TextAnnotation_1wwmllk" />
   </studyflow:study>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Study_1">
@@ -98,6 +102,10 @@
       <bpmndi:BPMNShape id="Event_001cil2_di" bpmnElement="Event_001cil2">
         <dc:Bounds x="582" y="652" width="36" height="36" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_0bzk73c_di" bpmnElement="Association_0bzk73c" bioc:stroke="#ce9d35" color:border-color="#ce9d35">
+        <di:waypoint x="470" y="220" />
+        <di:waypoint x="550" y="205" />
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0u4gyga_di" bpmnElement="Flow_0u4gyga">
         <di:waypoint x="540" y="370" />
         <di:waypoint x="590" y="370" />
@@ -140,6 +148,10 @@
         <di:waypoint x="530" y="670" />
         <di:waypoint x="582" y="670" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="TextAnnotation_1wwmllk_di" bpmnElement="TextAnnotation_1wwmllk" bioc:stroke="#ce9d35" bioc:fill="#fbe7cf" color:background-color="#fbe7cf" color:border-color="#ce9d35">
+        <dc:Bounds x="550" y="180" width="100" height="30" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn2:definitions>
